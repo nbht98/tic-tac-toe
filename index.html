@@ -2,17 +2,49 @@
 <html>
   <head>
     <link rel="stylesheet" href="style.css" />
+    <meta http-equiv="Cache-control" content="no-cache">
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.8.1/css/all.css"
+      integrity="sha384-50oBUHEmvpQ+1lW4y57PTFmhCaXp0ML5d60M1M7uH2+nqUivzIebhndOJK28anvf"
+      crossorigin="anonymous"
+    />
     <meta content="utf-8" http-equiv="encoding" />
     <title>Tic Tac Toe</title>
   </head>
   <body>
     <section>
-        <h1>Tic Tac Toe</h1>
-        <div class="container"></div>
-        <div class="message"></div>
-    </section>
+      <h1>Tic Tac Toe</h1>
+      <div class="option">
+        <div class="select">
+          <select id="level">
+            <option value="0">Easy</option>
+            <option value="50">Medium</option>
+            <option value="75">Hard</option>
+            <option value="100">You can't win</option>
+          </select>
+        </div>
+        <div class="button">
+          <button class="x">&#10005</button>
+          <button class="o">&#9711</button>
+        </div>       
+      </div>
 
+      <div class="container"></div>
+      <div class="mask"></div>
+      <div class="message-container">
+        <div class="message"></div>
+      </div>
+    </section>
     <script src="script.js"></script>
   </body>
 </html>

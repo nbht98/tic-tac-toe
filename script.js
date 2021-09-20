@@ -5,7 +5,8 @@ const gameBoard = (() => {
     return board;
   };
 
-  const makeBoard = (container) => {
+  const makeBoard = () => {
+    const container = document.querySelector(".container");
     for (c = 0; c < board.length; c++) {
       let cell = document.createElement("div");
       cell.classList.add("cell");
@@ -46,25 +47,44 @@ const gameBoard = (() => {
 })();
 
 const displayController = (() => {
-  const container = document.querySelector(".container");
-  gameBoard.makeBoard(container);
-  const fieldElements = document.querySelectorAll(".cell");
   const messageElement = document.querySelector(".message");
+  const mask = document.querySelector(".mask");
+  gameBoard.makeBoard();
+
+  const fieldElements = document.querySelectorAll(".cell");
+
+  const resetGameboard = () => {
+    gameController.reset();
+    mask.classList.remove("active");
+    updateGameboard();
+  };
 
   const updateGameboard = () => {
     for (let i = 0; i < fieldElements.length; i++) {
-      fieldElements[i].textContent = gameBoard.getField(i);
+      if (gameBoard.getField(i) == "X") {
+        fieldElements[i].innerHTML = `&#10005`;
+        fieldElements[i].classList.add("cell-x");
+      } else if (gameBoard.getField(i) == "O") {
+        fieldElements[i].innerHTML = `&#9711`;
+        fieldElements[i].classList.add("cell-o");
+      } else {
+        fieldElements[i].innerHTML = "";
+        fieldElements[i].classList.remove("cell-o");
+        fieldElements[i].classList.remove("cell-x");
+      }
     }
   };
 
   const setResultMessage = (winner) => {
+    mask.classList.add("active");
+    mask.addEventListener("click", resetGameboard);
+
     if (winner === "draw") {
       messageElement.textContent = "It's a draw!";
     } else {
       messageElement.textContent = `${winner} won!`;
     }
   };
-
   return { updateGameboard, setResultMessage };
 })();
 
@@ -75,45 +95,32 @@ const Player = (sign) => {
     return sign;
   };
 
-  return { getSign };
+  const setSign = (newSign) => {
+    sign = newSign;
+  };
+
+  return { getSign, setSign };
 };
 
 const minimaxAi = ((percentage) => {
-  let scores = {
-    X: 1,
-    O: -1,
-    draw: 0,
-  };
-
   let aiPrecision = percentage;
 
   const chooseField = () => {
-    //random number between 0 and 100
-    // const value = Math.floor(Math.random() * (100 + 1));
+    const value = Math.floor(Math.random() * (100 + 1));
+    let choice;
 
-    // if the random number is smaller then the ais threshold, it findds the best move
-    // let choice = null;
-    // if (value <= aiPrecision) {
-    //     console.log('bestChoice');
-    //     choice = minimax(gameBoard, gameController.getAiPlayer()).index
-    //     const field = gameBoard.getField(choice);
-    //     if (field != undefined) {
-    //         return "error"
-    //     }
-    // }
-    // else {
-    // const emptyField = gameBoard.getEmptyField();
-    // let randomMove = Math.floor(Math.random() * emptyField.length);
-    // choice = emptyField[randomMove];
-    // return choice;
-
-    console.log('bestChoice');
-    choice = bestMove(gameBoard.getBoard())
-    return choice
+    if (value <= aiPrecision) {
+      choice = bestMove(gameBoard.getBoard());
+    } else {
+      const emptyField = gameBoard.getEmptyField();
+      let randomMove = Math.floor(Math.random() * emptyField.length);
+      choice = emptyField[randomMove];
+    }
+    return choice;
   };
 
   const bestMove = (board) => {
-    let bestMove
+    let bestMove;
     let bestScore = -Infinity;
     for (let i = 0; i < board.length; i++) {
       if (board[i] == undefined) {
@@ -131,8 +138,14 @@ const minimaxAi = ((percentage) => {
 
   const minimax = (board, depth, isMaximizing) => {
     let result = gameController.checkWin(board);
-    if (result) {
-      return scores[result];
+    if (result == gameController.getComputer().getSign()) {
+      return 1;
+    }
+    if (result == gameController.getPlayer().getSign()) {
+      return -1;
+    }
+    if (result == "draw") {
+      return 1;
     }
     if (isMaximizing) {
       let bestScore = -Infinity;
@@ -159,18 +172,48 @@ const minimaxAi = ((percentage) => {
     }
   };
 
-  return { chooseField };
-})();
+  const changeAI = () => {
+    let select = document.querySelector("#level");
+    aiPrecision = parseInt(select.options[select.selectedIndex].value);
+  };
+
+  return { chooseField, changeAI };
+})(0);
 
 const gameController = (() => {
-  const player = Player("O");
-  const computer = Player("X");
+  let player = Player("X");
+  let computer = Player("O");
   const computerLogic = minimaxAi;
-  let round = 1;
+  const selector = document.querySelector(".select");
+  const x = document.querySelector(".x");
+  const o = document.querySelector(".o");
+
   let isOver = false;
 
   const getPlayer = () => player;
   const getComputer = () => computer;
+
+  const init = (() => {
+    x.classList.add("button-active");
+    selector.addEventListener("change", () => {
+      computerLogic.changeAI();
+      reset();
+    });
+    o.addEventListener("click", () => {
+      player.setSign("O");
+      computer.setSign("X");
+      o.classList.add("button-active");
+      x.classList.remove("button-active");
+      reset();
+    });
+    x.addEventListener("click", () => {
+      player.setSign("X");
+      computer.setSign("O");
+      x.classList.add("button-active");
+      o.classList.remove("button-active");
+      reset();
+    });
+  })();
 
   const play = (fieldIndex, sign) => {
     gameBoard.setField(fieldIndex, sign);
@@ -190,13 +233,10 @@ const gameController = (() => {
     )
       return;
     play(fieldIndex, player.getSign());
-    round++;
     if (!isOver) {
       play(computerLogic.chooseField(), computer.getSign());
-      round++;
     }
   };
-
 
   const checkWin = (board) => {
     let winner;
@@ -211,38 +251,25 @@ const gameController = (() => {
       [2, 4, 6],
     ];
 
-    const isWin = winConditions
-      .some((possibleCombination) => {
-        if (
-          possibleCombination.every(
-            (field) => board[field] === "O"
-          )
-        )
-          winner = "O";
-        if (
-          possibleCombination.every(
-            (field) => board[field] === "X"
-          )
-        )
-          winner = "X";
-        return (
-          possibleCombination.every(
-            (field) => board[field] === "O"
-          ) ||
-          possibleCombination.every(
-            (field) => board[field] === "X"
-          )
-        );
-      });
+    const isWin = winConditions.some((possibleCombination) => {
+      if (possibleCombination.every((field) => board[field] === "O"))
+        winner = "O";
+      if (possibleCombination.every((field) => board[field] === "X"))
+        winner = "X";
+      return (
+        possibleCombination.every((field) => board[field] === "O") ||
+        possibleCombination.every((field) => board[field] === "X")
+      );
+    });
     if (isWin) {
       return winner;
     }
     for (let i = 0; i < board.length; i++) {
       if (board[i] == undefined) {
-        return 
+        return;
       }
     }
-    return 'draw'
+    return "draw";
   };
 
   const gameIsOver = () => {
@@ -250,8 +277,9 @@ const gameController = (() => {
   };
 
   const reset = () => {
-    round = 1;
     isOver = false;
+    gameBoard.reset();
+    displayController.updateGameboard()
   };
 
   return {
